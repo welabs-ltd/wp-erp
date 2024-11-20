@@ -108,8 +108,22 @@ function erp_get_peoples( $args = [] ) {
 
         if ( erp_is_module_active( 'CRM' ) ) {
             if ( ! erp_crm_is_current_user_manager() && erp_crm_is_current_user_crm_agent() ) {
-                $current_user_id = get_current_user_id();
-                $sql['where'][]  = $wpdb->prepare( "AND people.contact_owner = %d", $current_user_id );
+                $condition = true;
+
+                $additional_conditions = apply_filters( 'erp_crm_add_additional_condition', [] );
+
+                foreach ( $additional_conditions as $additional_con ) {
+                    if ( ! is_bool( $additional_con ) ) {
+                        continue;
+                    }
+                    
+                    $condition = $condition && $additional_con;
+                }
+
+                if ( $condition ) {
+                    $current_user_id = get_current_user_id();
+                    $sql['where'][] = $wpdb->prepare( "AND people.contact_owner = %d", $current_user_id );
+                }
             }
         }
 
