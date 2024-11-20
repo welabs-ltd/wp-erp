@@ -367,6 +367,9 @@ class AjaxHandler {
 		erp_crm_edit_contact_subscriber( $group_ids, $customer_id );
 
 		$customer_data = $customer->to_array();
+
+		do_action( 'erp_crm_save_contact_data', $customer, $customer_id, $customer_data );
+
 		$statuses      = erp_crm_customer_get_status_count( $data['type'] );
 
 		$this->send_success(
@@ -871,6 +874,8 @@ class AjaxHandler {
 		} else {
 			erp_crm_update_contact_owner( $output['assign_contact_id'], $output['erp_select_assign_contact'], 'id' );
 		}
+
+		do_action( 'erp_assign_contact_owner', $output );
 
 		$this->send_success( __( 'Assign to agent successfully', 'erp' ) );
 	}

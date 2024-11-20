@@ -114,13 +114,19 @@ class ContactGroupListTable extends WP_List_Table {
         $view_subscriber_url = add_query_arg( [ 'page'=>'erp-crm', 'section'=> 'contact', 'sub-section'=> 'contact-groups', 'groupaction' => 'view-subscriber', 'filter_contact_group' => $contact_group->id ], admin_url( 'admin.php' ) );
 
         if ( current_user_can( 'erp_crm_edit_groups' ) ) {
-            $actions['edit'] = sprintf( '<a href="%s" data-id="%d" title="%s">%s</a>', $delete_url, $contact_group->id, __( 'Edit this Contact Group', 'erp' ), __( 'Edit', 'erp' ) );
+            $allow_edit = apply_filters('handle_access_for_edit', true, $contact_group );
+            if ( $allow_edit ){
+                $actions['edit'] = sprintf( '<a href="%s" data-id="%d" title="%s">%s</a>', $delete_url, $contact_group->id, __( 'Edit this Contact Group', 'erp' ), __( 'Edit', 'erp' ) );
+            }
         }
 
         $actions['view-subscriber'] = sprintf( '<a href="%s" title="%s">%s</a>', $view_subscriber_url, __( 'View Subscriber in this group', 'erp' ), __( 'View Subscriber', 'erp' ) );
 
         if ( current_user_can( 'erp_crm_edit_groups' ) ) {
-            $actions['delete'] = sprintf( '<a href="%s" class="submitdelete" data-id="%d" title="%s">%s</a>', $delete_url, $contact_group->id, __( 'Delete this Contact Group', 'erp' ), __( 'Delete', 'erp' ) );
+            $allow_edit = apply_filters('handle_access_for_delete', true, $contact_group );
+            if ( $allow_edit ){
+                $actions['delete'] = sprintf( '<a href="%s" class="submitdelete" data-id="%d" title="%s">%s</a>', $delete_url, $contact_group->id, __( 'Delete this Contact Group', 'erp' ), __( 'Delete', 'erp' ) );
+            }
         }
 
         if ( $contact_group->private ) {
