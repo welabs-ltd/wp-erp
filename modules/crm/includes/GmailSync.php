@@ -215,6 +215,8 @@ class GmailSync {
             wp_mkdir_p( $dir );
         }
 
+        do_action( 'erp_crm_create_default_folder_to_save_attachment', $deal_id );
+
         foreach ( $attachments as $key => $item ) {
             $name = $item['name'];
             $file = wp_check_filetype( $item['name'] );
@@ -231,6 +233,9 @@ class GmailSync {
                 //remove image data
                 unset( $attachments[$key]['data'] );
                 unset( $attachments[$key]['id'] );
+
+                do_action( 'erp_crm_save_attachment_to_wp', $dir, $name, $file, $deal_id,  $subdir  );
+
             } else {
                 unset( $attachments[$key] );
             }
@@ -294,6 +299,9 @@ class GmailSync {
                 switch ( $message_id_parts[3] ) {
                     case 'r1':
                         $customer_feed_data = erp_crm_save_email_activity( $email, $this->get_inbound_email() );
+
+                        do_action( 'erp_crm_r1_email_activity', $email );
+
                         break;
 
                     case 'r2':

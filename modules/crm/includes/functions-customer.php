@@ -713,11 +713,14 @@ function erp_crm_get_feed_activity( $args = [] ) {
         }
 
         if ( erp_crm_is_current_user_crm_agent() ) {
-            $contact_owner = get_current_user_id();
-            $people_sql =  $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}erp_peoples WHERE contact_owner = %d", $contact_owner );
-            $people_ids    = array_keys( $wpdb->get_results( $people_sql, OBJECT_K ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-
-            $results = $results->whereIn( 'user_id', $people_ids );
+            $allow = apply_filters('erp_crm_allow_access_peoples_view', true );
+            if( $allow ){
+                $contact_owner = get_current_user_id();
+                $people_sql =  $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}erp_peoples WHERE contact_owner = %d", $contact_owner );
+                $people_ids    = array_keys( $wpdb->get_results( $people_sql, OBJECT_K ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+    
+                $results = $results->whereIn( 'user_id', $people_ids );
+            }   
         }
 
         if ( isset( $postdata['created_by'] ) && ! empty( $postdata['created_by'] ) ) {
@@ -815,6 +818,8 @@ function erp_crm_get_feed_activity( $args = [] ) {
             $value['created_date']          = gmdate( 'Y-m-d', strtotime( $value['created_at'] ) );
             $value['created_timeline_date'] = gmdate( 'Y-m-01', strtotime( $value['created_at'] ) );
             // $value['component'] = 'timeline-item';
+
+            $value = apply_filters('erp_crm_customer_feeds_values', $value );
             $feeds[] = $value;
         }
 
@@ -851,8 +856,11 @@ function erp_crm_save_customer_feed_data( $data ) {
             $query->select( 'ID', 'user_nicename', 'user_email', 'user_url', 'display_name' );
         },
     ] )
-                                                   ->find( $saved_activity_id )
-                                                   ->toArray();
+                                                   ->find( $saved_activity_id );
+    
+    $activity = apply_filters( 'erp_crm_modify_activity_data', $activity, $data );
+
+    $activity = $activity->toArray();
 
     $activity['extra'] = json_decode( base64_decode( $activity['extra'] ), true );
 
@@ -2694,12 +2702,16 @@ function erp_crm_save_email_activity( $email, $inbound_email_address ) {
             $mail_attachments = wp_list_pluck( $email['attachments'], 'path' );
         }
 
-        if ( wperp()->google_auth->is_active() ) {
-            //send using gmail api
-            $sent = erp_mail_send_via_gmail( $to_email, $email['subject'], $email['body'], $headers, $mail_attachments, $custom_headers );
-        } else {
-            // Send email at contact
-            $sent = erp_mail( $to_email, $email['subject'], $email['body'], $headers, $mail_attachments, $custom_headers );
+        if( apply_filters( 'erp_crm_skip_email_sending', false, $to_email, $email ) ){
+
+        }else{
+            if ( wperp()->google_auth->is_active() ) {
+                //send using gmail api
+                $sent = erp_mail_send_via_gmail( $to_email, $email['subject'], $email['body'], $headers, $mail_attachments, $custom_headers );
+            } else {
+                // Send email at contact
+                $sent = erp_mail( $to_email, $email['subject'], $email['body'], $headers, $mail_attachments, $custom_headers );
+            }
         }
     }
 
@@ -2763,12 +2775,16 @@ function erp_crm_save_contact_owner_email_activity( $email, $inbound_email_addre
         $mail_attachments = wp_list_pluck( $email['attachments'], 'path' );
     }
 
-    if ( wperp()->google_auth->is_active() ) {
-        //send using gmail api
-        $sent = erp_mail_send_via_gmail( $owner_info->user_email, $email['subject'], $email['body'], $headers, $mail_attachments, $custom_headers );
-    } else {
-        // Send email at contact
-        $sent = erp_mail( $owner_info->user_email, $email['subject'], $email['body'], $headers, $mail_attachments, $custom_headers );
+    if( apply_filters( 'erp_crm_skip_email_sending_to_contact_owner', false, $email ) ){
+
+    }else{
+        if ( wperp()->google_auth->is_active() ) {
+            //send using gmail api
+            $sent = erp_mail_send_via_gmail( $owner_info->user_email, $email['subject'], $email['body'], $headers, $mail_attachments, $custom_headers );
+        } else {
+            // Send email at contact
+            $sent = erp_mail( $owner_info->user_email, $email['subject'], $email['body'], $headers, $mail_attachments, $custom_headers );
+        }
     }
 
     // Update email counter
@@ -3177,6 +3193,8 @@ function erp_crm_insert_save_replies( $args = [] ) {
     if ( empty( $args['template'] ) ) {
         return new WP_Error( 'no-template', __( 'Template body is required', 'erp' ) );
     }
+
+    $args = apply_filters('erp_crm_insert_save_replies_args', $args );
 
     // update or insert new
     if ( $save_replies->exists ) {
@@ -3656,6 +3674,11 @@ function erp_crm_check_new_inbound_emails() {
         $filtered_emails = [];
 
         foreach ( $emails as $email ) {
+            $skip_email = apply_filters( 'erp_crm_skip_email_processing_in_checking_inbound_emails', false, $email );
+
+            if ( $skip_email ) {
+                continue;
+            }
             if ( isset( $email['headers']['References'] ) && preg_match( '/<' . $email_regexp . '>/', $email['headers']['References'], $matches ) ) {
                 $filtered_emails[] = $email;
 
