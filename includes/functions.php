@@ -2831,7 +2831,7 @@ function erp_render_menu_header( $component ) {
  * @return object|false
  */
 function erp_web_feed() {
-	$url  = 'https://wperp.com/feed/';
+    $url = apply_filters( 'erp_web_feed_url', 'https://wperp.com/feed/' );
 	$args = array(
 		'timeout'   => 15,
 		'sslverify' => false,
