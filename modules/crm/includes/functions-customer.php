@@ -2684,7 +2684,8 @@ function erp_crm_save_email_activity( $email, $inbound_email_address ) {
         $headers = '';
         $headers .= 'Content-Type: text/html; charset=UTF-8' . "\r\n";
 
-        $server_host = isset( $_SERVER['HTTP_HOST'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+        $server_host = apply_filters('erp_crm_edit_server_host', isset($_SERVER['HTTP_HOST']) ? esc_url_raw(wp_unslash($_SERVER['HTTP_HOST'])) : '');
+
         $message_id  = md5( uniqid( time() ) ) . '.' . $contact_id . '.' . $contact_owner_id . '.r2@' . $server_host;
 
         $custom_headers = [
@@ -2753,8 +2754,8 @@ function erp_crm_save_contact_owner_email_activity( $email, $inbound_email_addre
 
     $headers = '';
     $headers .= 'Content-Type: text/html; charset=UTF-8' . "\r\n";
+    $server_host = apply_filters('erp_crm_edit_server_host', isset($_SERVER['HTTP_HOST']) ? esc_url_raw(wp_unslash($_SERVER['HTTP_HOST'])) : '');
 
-    $server_host = isset( $_SERVER['HTTP_HOST'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
     $message_id  = md5( uniqid( time() ) ) . '.' . $save_data['user_id'] . '.' . $save_data['created_by'] . '.r1@' . $server_host;
 
     $custom_headers = [
@@ -3668,7 +3669,8 @@ function erp_crm_check_new_inbound_emails() {
 
         do_action( 'erp_crm_new_inbound_emails', $emails );
 
-        $server_host  = isset( $_SERVER['HTTP_HOST'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+        $server_host = apply_filters('erp_crm_edit_server_host', isset($_SERVER['HTTP_HOST']) ? esc_url_raw(wp_unslash($_SERVER['HTTP_HOST'])) : '');
+
         $email_regexp = '([a-z0-9]+[.][0-9]+[.][0-9]+[.][r][1|2])@' . $server_host;
 
         $filtered_emails = [];
@@ -3689,6 +3691,8 @@ function erp_crm_check_new_inbound_emails() {
                 $email['cid']  = $message_id_parts[1];
                 $email['sid']  = $message_id_parts[2];
 
+                do_action('erp_crm_process_inbound_email_data', $email);
+
                 $email['attachments'] = array_map( function ( $items ) {
                     $current_item           = [];
                     $current_item['name']   = $items['filename'];
@@ -3698,12 +3702,14 @@ function erp_crm_check_new_inbound_emails() {
                 }, $email['attachments'] );
                 /*** Save uploaded files start *****/
                 $g_uploader           = new \WeDevs\ERP\CRM\GmailSync();
-                $email['attachments'] = $g_uploader->save_attachments( $email['attachments'] );
+                $email['attachments'] = apply_filters('erp_crm_save_inbound_email_attachments', $g_uploader->save_attachments($email['attachments']), $email, $g_uploader);
                 /*** Save uploaded files end *****/
                 // Save & sent the email
                 switch ( $message_id_parts[3] ) {
                     case 'r1':
                         $customer_feed_data = erp_crm_save_email_activity( $email, $imap_options['username'] );
+
+                        do_action( 'erp_crm_r1_inbound_email_activity', $email );
                         break;
 
                     case 'r2':
