@@ -925,14 +925,16 @@ class EmployeesController extends REST_Controller {
 
         $histories = $employee->get_job_histories( $module );
 
-        for ( $i = 0; $i < count( $histories['job'] ); $i ++ ) {
-            $reports_to = new Employee( $histories['job'][ $i ]['reporting_to'] );
-
-            if ( $employee->is_employee() ) {
-                $histories['job'][ $i ]['reporting_to_full_name'] = $reports_to->display_name;
+        if ( isset( $histories['job'] ) ) {
+            for ( $i = 0; $i < count( $histories['job'] ); $i ++ ) {
+                $reports_to = new Employee( $histories['job'][ $i ]['reporting_to'] );
+    
+                if ( $employee->is_employee() ) {
+                    $histories['job'][ $i ]['reporting_to_full_name'] = $reports_to->display_name;
+                }
             }
         }
-
+       
         $total    = $employee->get_erp_user()->histories()->count();
         $response = rest_ensure_response( $histories );
         $response = $this->format_collection_response( $response, $request, $total );
