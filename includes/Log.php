@@ -61,6 +61,9 @@ class Log {
         ];
 
         $args  = wp_parse_args( $args, $defaults );
+
+        $args = apply_filters( 'erp_audit_log_get_defaults', $args, $defaults );
+
         $where = $results = [];
 
         $audits    = new \WeDevs\ERP\Admin\Models\AuditLog();
