@@ -712,15 +712,13 @@ function erp_crm_get_feed_activity( $args = [] ) {
             $results = $results->where( 'user_id', $postdata['customer_id'] );
         }
 
-        if ( erp_crm_is_current_user_crm_agent() ) {
-            $allow = apply_filters('erp_crm_allow_access_peoples_view', true );
-            if( $allow ){
-                $contact_owner = get_current_user_id();
-                $people_sql =  $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}erp_peoples WHERE contact_owner = %d", $contact_owner );
-                $people_ids    = array_keys( $wpdb->get_results( $people_sql, OBJECT_K ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-    
-                $results = $results->whereIn( 'user_id', $people_ids );
-            }   
+        if ( erp_crm_is_current_user_crm_agent() && apply_filters('erp_crm_allow_access_peoples_view', true ) === true ) {
+            $contact_owner = get_current_user_id();
+            $people_sql =  $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}erp_peoples WHERE contact_owner = %d", $contact_owner );
+            $people_ids    = array_keys( $wpdb->get_results( $people_sql, OBJECT_K ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+            $results = $results->whereIn( 'user_id', $people_ids );
+             
         }
 
         if ( isset( $postdata['created_by'] ) && ! empty( $postdata['created_by'] ) ) {
