@@ -2128,10 +2128,9 @@ class Employee {
         return $this->erp_user
             ->notes()
             ->skip( $offset )
-            ->take( $limit );
-         
-            $query = apply_filters('erp_hrm_employee_get_notes_query', $query );
-            return $query->get();
+            ->take( $limit )
+            ->orderBy( 'created_at', 'desc' )
+            ->get();
     }
 
     /**
