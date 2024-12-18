@@ -163,7 +163,7 @@ class Imap {
                 'headers'     => $this->get_headers( $email_id ),
             ];
 
-            $emails[] = apply_filters( 'erp_imap_email_info', $email_data, $email_id, $this );
+            $emails[] = apply_filters( 'erp_imap_email_info', $email_data, $email_id, $this, $this->connection );
 
         }
 
