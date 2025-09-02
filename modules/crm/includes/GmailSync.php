@@ -197,7 +197,7 @@ class GmailSync {
         ];
     }
 
-    public function save_attachments( $attachments ) {
+    public function save_attachments( $attachments, $deal_id = 0 ) {
         global $wp_filesystem;
         require_once ABSPATH . 'wp-admin/includes/file.php';
         WP_Filesystem();
